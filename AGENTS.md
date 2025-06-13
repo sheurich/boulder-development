@@ -652,11 +652,13 @@ Boulder uses Docker Compose for local development. All dependencies (MariaDB, Re
 
 #### Prerequisites
 
-- **Boulder Repository**: This guide assumes you are operating within an already cloned Boulder repository. If you need to clone it for the first time, use:
-  ```bash
-  git clone https://github.com/letsencrypt/boulder/
-  cd boulder
-  ```
+- **Boulder Repository**: This guide assumes you are operating within the root of an already cloned Boulder repository. 
+  - **If you are already in the Boulder directory, you can skip the following clone and cd steps.**
+  - If you need to clone it for the first time, use:
+    ```bash
+    git clone https://github.com/letsencrypt/boulder/
+    cd boulder
+    ```
 - **Docker Engine 1.13.0+** and **Docker Compose 1.10.0+**
 - **At least 2GB RAM** available for Docker
 - **Git**: It is recommended to enable `fsckObjects` (e.g., `transfer.fsckObjects = true` in your Git config) for enhanced integrity checks when fetching. This is not enabled by default in Git.
@@ -667,7 +669,7 @@ The primary steps to get the development environment running are:
 
 ```bash
 # Ensure you are in the root of the Boulder repository
-# cd /path/to/your/boulder-checkout # If necessary
+# If you are already here, you do not need to change directories.
 
 # Build Docker images and start all services
 # This command also handles initial Go compilation if images are being built.
@@ -678,7 +680,7 @@ docker compose up
 ./t.sh
 
 # Or run with next-generation config:
-# ./tn.sh
+./tn.sh
 ```
 
 #### Primary Testing Tools
