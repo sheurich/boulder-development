@@ -4,6 +4,16 @@
 
 This document serves as a comprehensive reference for AI agents assisting with feature development, debugging, and maintenance tasks within the Boulder ACME Certificate Authority project. Boulder is a production-grade implementation of the ACME protocol (RFC 8555) used by Let's Encrypt to issue millions of certificates.
 
+## Quick Start Checklist
+
+**Before starting any Boulder development task:**
+
+1. **Read this entire document** - Don't skip sections; the routing matrix and patterns are essential
+2. **Validate environment setup** - Run `docker compose build --pull` if you encounter Docker issues
+3. **Check documentation first** - When encountering issues, always check `*.md` docs in boulder-development repo before proceeding
+4. **Use the decision matrix** - Follow the service routing guide below to identify which services to modify
+5. **Test with proper syntax** - Use `./t.sh --unit --filter=TestName` (note the equals sign in filter syntax)
+
 ### Purpose
 
 - **Enable AI-assisted development**: Provide structured information that AI agents can reliably interpret to understand Boulder's architecture, services, and development patterns
@@ -135,5 +145,36 @@ Boulder includes various administrative and operational tools in `cmd/`:
         ```bash
         ./t.sh --integration
         ```
+    *   Run specific tests (note the equals sign):
+        ```bash
+        ./t.sh --unit --filter=TestDNSAccount01
+        ./t.sh --integration --filter=TestSpecificFunction
+        ```
+
+**Environment Setup**: If you encounter Docker-related issues during testing:
+```bash
+docker compose build --pull
+```
+This resolves most Docker image and dependency issues.
 
 This microservices architecture provides security through isolation, scalability through independent scaling, and maintainability through clear component boundaries. Each service has a well-defined responsibility and communicates through stable gRPC interfaces.
+
+## Troubleshooting Workflow
+
+When encountering issues during Boulder development:
+
+1. **Check documentation first** - Review `*.md` files in boulder-development repo
+2. **Environment issues** - Run `docker compose build --pull` for Docker problems
+3. **Test failures** - Verify test filter syntax uses equals sign: `--filter=TestName`
+4. **Service selection** - Use the Quick Task Routing Guide above to identify correct services
+5. **Ask for help** - If documentation doesn't resolve the issue, request assistance rather than proceeding with uncertainty
+
+## Quick Reference Card
+
+**Most Common Development Patterns:**
+- New ACME endpoint: Modify WFE2 → RA → SA
+- New challenge type: Modify VA → RA → WFE2  
+- Certificate policy: Modify RA → CA
+- Database changes: Create migration in `sa/db/` → Update SA models
+- Testing: Always use `./t.sh` or `./tn.sh`, never direct `go test`
+- Docker issues: Run `docker compose build --pull`
