@@ -11,8 +11,9 @@ This document serves as a comprehensive reference for AI agents assisting with f
 1. **Read this entire document** - Don't skip sections; the routing matrix and patterns are essential
 2. **Validate environment setup** - Run `docker compose build --pull` if you encounter Docker issues
 3. **Check documentation first** - When encountering issues, always check `*.md` docs in boulder-development repo before proceeding
-4. **Use the decision matrix** - Follow the service routing guide below to identify which services to modify
-5. **Test with proper syntax** - Use `./t.sh --unit --filter=TestName` (note the equals sign in filter syntax)
+4. **Query the knowledge graph before reading source** - `.understand-anything/knowledge-graph.json` is a structural index of Boulder at a known commit. See [`.understand-anything/USAGE.md`](./.understand-anything/USAGE.md) for jq patterns. Treat it as a navigation shortcut, not source of truth.
+5. **Use the decision matrix** - Follow the service routing guide below to identify which services to modify
+6. **Test with proper syntax** - Use `./t.sh --unit --filter=TestName` (note the equals sign in filter syntax)
 
 ### Purpose
 
@@ -86,6 +87,13 @@ For concrete examples, code templates, and established development patterns used
 ## Practical Implementation Guide
 
 For step-by-step instructions on setting up a development environment, implementing new features, and common development workflows, consult the [Practical Implementation Guide](./PRACTICAL_IMPLEMENTATION_GUIDE.md).
+
+## Boulder Knowledge Graph
+
+`.understand-anything/knowledge-graph.json` is a machine-generated map of Boulder — files, functions, classes, imports, and 10 architectural layers — pinned to a known upstream commit. Use it to locate code, follow imports, and scope changes without reading every file by hand.
+
+- [`USAGE.md`](./.understand-anything/USAGE.md) has the query patterns and caveats.
+- [`PROVENANCE.md`](./.understand-anything/PROVENANCE.md) has the source commit, corpus scope, and regenerate steps.
 
 ### Security Context Separation
 
