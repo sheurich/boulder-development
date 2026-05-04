@@ -1,0 +1,55 @@
+# .understandignore — Boulder analysis scope
+# Trimmed to ~250 files: core services, libraries, schema, infra, docs.
+# Syntax matches .gitignore (globs, # comments, ! negation, trailing / for dirs).
+
+# --- Dependencies / build artifacts (restated; covered by built-in defaults) ---
+vendor/
+bin/
+.gocache/
+.pi/
+
+# --- Tests we don't want analyzed ---
+*_test.go
+mocks/
+test/
+
+# Keep ratelimits/testdata/ — it documents the rate-limit schema
+!ratelimits/testdata/
+!ratelimits/testdata/**
+
+# --- Generated code (proto sources are kept) ---
+*.pb.go
+
+# --- Lint test fixtures (keep lint Go sources) ---
+linter/lints/**/*.pem
+linter/lints/**/*.json
+linter/lints/test/
+
+# --- Static data lists (IANA special-use domains) ---
+iana/data/
+
+# --- Build and release tooling ---
+tools/
+
+# --- Binary releases ---
+*.deb
+*.tar.gz
+
+# --- Lockfile / generated checksum data ---
+go.sum
+
+# --- Top-level one-off dev scripts (not shipped, not deployed) ---
+/t.sh
+/tn.sh
+/test.sh
+/start.py
+
+# --- LICENSE variants, metadata configs, dependabot wiring ---
+LICENSE.txt
+CODEOWNERS
+.dockerignore
+.typos.toml
+.golangci.yml
+.github/FUNDING.yml
+.github/dependabot.yml
+.github/issue_template.md
