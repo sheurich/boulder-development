@@ -51,6 +51,7 @@ Kept: all production Go services and libraries, all `.proto` schemas, all `.sql`
 cd /path/to/boulder
 cp /path/to/boulder-development/.understand-anything/.understandignore .understand-anything/
 # Launch /understand --review in Claude Code from the Boulder checkout root
+# Then regenerate ONBOARDING.md from the new graph: /understand-onboard
 ```
 
 Expect ~15-20 minutes on a warm machine; most time is spent on LLM-driven semantic analysis in Phase 2.

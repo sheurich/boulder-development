@@ -11,7 +11,7 @@ This document serves as a comprehensive reference for AI agents assisting with f
 1. **Read this entire document** - Don't skip sections; the routing matrix and patterns are essential
 2. **Validate environment setup** - Run `docker compose build --pull` if you encounter Docker issues
 3. **Check documentation first** - When encountering issues, always check `*.md` docs in boulder-development repo before proceeding
-4. **Query the knowledge graph before reading source** - `.understand-anything/knowledge-graph.json` is a structural index of Boulder at a known commit. See [`.understand-anything/USAGE.md`](./.understand-anything/USAGE.md) for jq patterns. Treat it as a navigation shortcut, not source of truth.
+4. **Query the knowledge graph before reading source** - `.understand-anything/knowledge-graph.json` is a structural index of Boulder at a known commit. Read [`ONBOARDING.md`](./ONBOARDING.md) for the layer-by-layer tour derived from it, and see [`.understand-anything/USAGE.md`](./.understand-anything/USAGE.md) for jq patterns. Treat them as navigation shortcuts, not sources of truth.
 5. **Use the decision matrix** - Follow the service routing guide below to identify which services to modify
 6. **Test with proper syntax** - Use `./t.sh --unit --filter=TestName` (note the equals sign in filter syntax)
 
@@ -92,6 +92,7 @@ For step-by-step instructions on setting up a development environment, implement
 
 `.understand-anything/knowledge-graph.json` is a machine-generated map of Boulder — files, functions, classes, imports, and 10 architectural layers — pinned to a known upstream commit. Use it to locate code, follow imports, and scope changes without reading every file by hand.
 
+- [`ONBOARDING.md`](./ONBOARDING.md) is the layer-by-layer tour derived from the graph — start here for first-time navigation.
 - [`USAGE.md`](./.understand-anything/USAGE.md) has the query patterns and caveats.
 - [`PROVENANCE.md`](./.understand-anything/PROVENANCE.md) has the source commit, corpus scope, and regenerate steps.
 
