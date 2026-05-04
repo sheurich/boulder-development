@@ -183,7 +183,7 @@ Core certificate issuance engine with cryptographic operations.
 **AI Development Notes:**
 
 - **Common tasks**: Adding certificate extensions, implementing new certificate profiles, enhancing issuance policies
-- **Key files**: `ca/ca.go` (main issuance logic), `issuance/cert.go` (certificate generation), `ca/proto/ca.proto` (gRPC interface)
+- **Key files**: `ca/ca.go` (main issuance logic), `ca/crl.go` (CRL signing), `issuance/cert.go` (certificate generation), `ca/proto/ca.proto` (gRPC interface)
 - **Certificate profiles**: Defined in `issuance/` package, use existing profile patterns
 - **HSM operations**: All private key operations go through PKCS#11 interface
 - **Testing**: Use test certificates in `test/certs/`, mock HSM with `test/` helpers

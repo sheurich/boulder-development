@@ -49,15 +49,15 @@ Use this decision matrix to quickly identify which services to modify for common
 | Task Type | Primary Service | Secondary Services | Key Files | Configuration |
 |-----------|----------------|-------------------|-----------|---------------|
 | **New ACME endpoint** | WFE2 | RA, SA | `wfe2/wfe.go`, `ra/ra.go` | `test/config/wfe2.json` |
-| **New challenge type** | VA | RA, WFE2 | `va/va.go`, `core/challenges.go`, `ra/ra.go` | `test/config/va.json` |
-| **Certificate policy** | RA, CA | SA | `ra/ra.go`, `ca/ca.go`, `issuance/cert.go` | `test/config/ra.json`, `test/config/ca.json` |
+| **New challenge type** | VA | RA, WFE2 | `va/va.go`, `va/caa.go`, `va/dns_persist.go`, `core/challenges.go`, `ra/ra.go` | `test/config/va.json` |
+| **Certificate policy** | RA, CA | SA | `ra/ra.go`, `ca/ca.go`, `issuance/cert.go`, `policy/pa.go` | `test/config/ra.json`, `test/config/ca.json` |
 | **Rate limiting** | WFE2, RA | SA | `ratelimits/transaction.go`, `ra/ra.go` | `test/config/ratelimit-*.yml` |
-| **Database schema** | SA | All services | `sa/model.go`, `sa/db/*.sql` | `test/config/sa.json` |
-| **Domain validation** | VA | RA | `va/dns.go`, `va/http.go`, `va/tlsalpn.go` | `test/config/va.json` |
+| **Database schema** | SA | All services | `sa/sa.go`, `sa/model.go`, `sa/db/01-boulder_sa.sql` | `test/config/sa.json` |
+| **Domain validation** | VA | RA | `va/va.go`, `va/caa.go`, `va/dns.go`, `va/http.go`, `va/tlsalpn.go` | `test/config/va.json` |
 | **Certificate issuance** | CA | RA, SA, Publisher | `ca/ca.go`, `issuance/cert.go` | `test/config/ca.json` |
 | **External integrations** | Publisher | CA, SA | `publisher/publisher.go`, `ctpolicy/ctpolicy.go` | `test/config/publisher.json` |
 | **Account management** | WFE2, RA | SA | `wfe2/wfe.go`, `ra/ra.go` | `test/config/wfe2.json` |
-| **Monitoring/metrics** | All services | - | Service-specific `*.go` files | Service-specific config files |
+| **Monitoring/metrics** | All services | - | `metrics/scope.go`, `metrics/measured_http/http.go`, `observer/observer.go` | Service-specific config files |
 
 **Quick Decision Rules:**
 - **Client-facing changes**: Start with WFE2

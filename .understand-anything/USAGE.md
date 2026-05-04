@@ -71,6 +71,8 @@ The graph is a snapshot at `meta.gitCommitHash`. If Boulder has moved on, it's s
 
 Tests, mocks, generated gRPC stubs, and the integration harness aren't in the graph. That's a scope decision, not a claim that they don't exist.
 
+Config files under `test/config/`, `test/consul/config.hcl`, and `*_test.go` files exist in the Boulder checkout but are filtered by `.understandignore`; routing-table Configuration paths won't resolve via `jq`.
+
 `iana/data/` (static domain lists) is also excluded. The Go code that reads those files is present.
 
 ## When the graph is wrong

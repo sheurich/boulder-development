@@ -133,11 +133,11 @@ test/config-next/     # Next-generation config (for testing upcoming changes)
 Key configuration files:
 Key configuration files:
 
-- `wfe2.json` - Web Front End settings
-- `ra.json` - Registration Authority settings
-- `va.json` - Validation Authority settings
-- `ratelimit-defaults.yml` - Rate limiting rules
-- `ratelimit-overrides.yml` - Rate limit exceptions
+- `test/config/wfe2.json` - Web Front End settings
+- `test/config/ra.json` - Registration Authority settings
+- `test/config/va.json` - Validation Authority settings
+- `test/config/ratelimit-defaults.yml` - Rate limiting rules
+- `test/config/ratelimit-overrides.yml` - Rate limit exceptions
 
 ### Implementing a New DNS Challenge Validation Method
 
