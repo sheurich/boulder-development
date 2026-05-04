@@ -15,7 +15,7 @@ Boulder uses Docker Compose for local development. All dependencies (MariaDB, Re
     git clone https://github.com/letsencrypt/boulder/
     cd boulder
     ```
-- **Docker Engine 1.13.0+** and **Docker Compose 1.10.0+**
+- **Docker** with Compose support (modern Docker Desktop or Docker Engine with the `compose` plugin)
 - **At least 2GB RAM** available for Docker
 - **Git**: It is recommended to enable `fsckObjects` (e.g., `transfer.fsckObjects = true` in your Git config) for enhanced integrity checks when fetching. This is not enabled by default in Git.
 
@@ -110,9 +110,10 @@ This will ensure you are using the most up-to-date linter and build environment.
 The Docker setup includes:
 
 - **boulder**: Main container running all Boulder services
-- **bmysql**: MariaDB database
+- **bmariadb**: MariaDB database
 - **bproxysql**: ProxySQL for database load balancing
-- **bredis_1-4**: Redis instances for rate limiting
+- **bvitess**: Vitess database proxy (config-next)
+- **bredis_1, bredis_2**: Redis instances for rate limiting
 - **bconsul**: Service discovery
 - **bjaeger**: Distributed tracing
 - **bpkimetal**: Prometheus exporter for PKI-related metrics
@@ -135,8 +136,8 @@ Key configuration files:
 - `wfe2.json` - Web Front End settings
 - `ra.json` - Registration Authority settings
 - `va.json` - Validation Authority settings
-- `wfe2-ratelimit-defaults.yml` - Rate limiting rules
-- `wfe2-ratelimit-overrides.yml` - Rate limit exceptions
+- `ratelimit-defaults.yml` - Rate limiting rules
+- `ratelimit-overrides.yml` - Rate limit exceptions
 
 ### Implementing a New DNS Challenge Validation Method
 
@@ -182,15 +183,16 @@ The implementation will span multiple services:
 **Step 1: Define Challenge Type**
 
 ```go
-// In core/challenges.go
-const ChallengeTypeNewDNS = "dns-new" // Replace with actual name
+// In core/objects.go - Challenge types are AcmeChallenge string constants
+const ChallengeTypeNewDNS = AcmeChallenge("dns-new") // Replace with actual name
+```
 
-// In core/challenges.go - Add to supported challenges
-var ChallengeTypes = map[string]bool{
-    ChallengeTypeHTTP01:    true,
-    ChallengeTypeDNS01:     true,
-    ChallengeTypeTLSALPN01: true,
-    ChallengeTypeNewDNS:    true, // Your new challenge
+Add a constructor in `core/challenges.go`:
+
+```go
+// In core/challenges.go
+func NewDNSChallenge(token string) Challenge {
+    return newChallenge(ChallengeTypeNewDNS, token)
 }
 ```
 
@@ -251,7 +253,7 @@ func (ra *RegistrationAuthorityImpl) newAuthorizationPB(ident identifier.ACMEIde
     // Existing challenges...
 
     // Add your new DNS challenge
-    if ra.enabledChallenges[core.ChallengeTypeNewDNS] {
+    if ra.pa.ChallengeTypeEnabled(core.ChallengeTypeNewDNS) {
         challenges = append(challenges, core.Challenge{
             Type:   core.ChallengeTypeNewDNS,
             Status: core.StatusPending,
@@ -267,16 +269,7 @@ func (ra *RegistrationAuthorityImpl) newAuthorizationPB(ident identifier.ACMEIde
 
 ```bash
 # Update VA configuration in test/config/va.json and test/config-next/va.json
-{
-  "va": {
-    "enabledChallenges": {
-      "http-01": true,
-      "dns-01": true,
-      "tls-alpn-01": true,
-      "dns-new": true  // Enable your new challenge
-    }
-  }
-}
+# Enable new challenge in the policy authority (PA) configuration
 ```
 
 #### 4. Testing Implementation
@@ -380,7 +373,8 @@ If adding new gRPC methods:
 
 ```bash
 # Regenerate protocol buffers after editing .proto files
-docker compose run boulder go generate ./...
+# (Boulder uses grpc-go and protoc-gen-go; check existing .proto files for generation comments)
+docker compose run boulder protoc ...
 
 # Test protocol buffer changes
 ./t.sh --unit --filter=./va/proto
@@ -391,8 +385,9 @@ docker compose run boulder go generate ./...
 If your feature requires database changes:
 
 ```bash
-# Create migration file
-touch sa/db/boulder_sa/YYYYMMDD_new_dns_challenge.sql
+# Create or update schema file in sa/db/
+# Schema definitions live in sa/db/ (e.g., 01-boulder_sa.sql, 01-boulder_sa_next.sql)
+# Edit the appropriate schema file to add your table/column changes
 
 # Test migration
 docker compose run --use-aliases boulder ./sa/migrations.sh -b boulder_sa_test
@@ -408,13 +403,13 @@ docker compose run --use-aliases boulder ./sa/migrations.sh -b boulder_sa_test
 docker compose logs boulder
 
 # Run single service for debugging
-docker compose run boulder go run ./cmd/boulder-va/
+docker compose run boulder boulder-va ...
 
 # Interactive debugging
 docker compose run boulder bash
 
 # Database inspection (general development DB)
-docker compose exec bmysql mysql -u root boulder
+docker compose exec bmariadb mysql -u root boulder
 ```
 
 ### Common Development Patterns
@@ -430,7 +425,7 @@ This workflow ensures your new DNS challenge validation method integrates proper
 
 ### Configuration Validation
 
-Boulder uses a custom fork of the [go-playground/validator](https://github.com/letsencrypt/validator) library to validate configurations at startup. When implementing new features that require configuration changes:
+Boulder uses a fork of the [go-playground/validator](https://github.com/letsencrypt/validator) library (`github.com/letsencrypt/validator/v10`) to validate configurations at startup. When implementing new features that require configuration changes:
 
 - **Review `docs/config-validation.md`** for available validation tags and patterns
 - **Use conditional validation tags** (`required_if`, `required_unless`, etc.) to link configuration requirements to feature flags

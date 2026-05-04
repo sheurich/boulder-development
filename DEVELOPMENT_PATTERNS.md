@@ -2,13 +2,13 @@
 
 This section provides concrete, real-world examples derived from Boulder's actual codebase and recent development history. These templates follow established patterns used throughout the project.
 
-### Recent Development Patterns
+### Development Patterns
 
-Based on recent commits (e.g., PR #8221 "ratelimits: Add IP address identifier support"), here are common development patterns:
+Based on Boulder's codebase, here are common development patterns:
 
 #### 1. Adding New Rate Limit Support
 
-**Pattern**: Extending rate limits to handle new identifier types (like IP addresses)
+**Pattern**: Extending rate limits to handle new identifier types
 
 ```go
 // From ratelimits/transaction.go - New rate limit transaction builder
@@ -36,7 +36,7 @@ func newIdentifierBucketKey(name Name, identifier core.Identifier) string {
 func TestNewIdentifierTransactions(t *testing.T) {
     t.Parallel()
 
-    tb, err := NewTransactionBuilderFromFiles("../test/config-next/wfe2-ratelimit-defaults.yml", "")
+    tb, err := NewTransactionBuilderFromFiles("../test/config-next/ratelimit-defaults.yml", "")
     test.AssertNotError(t, err, "creating TransactionBuilder")
 
     // Test the transaction creation

@@ -21,8 +21,9 @@ graph TD
     SA["Storage Authority (SA)<br/>boulder-sa"]
     MariaDB["MariaDB"]
     Publisher["Publisher<br/>boulder-publisher"]
+    CRLStorer["CRL Storer<br/>crl-storer"]
     NonceService["Nonce Service<br/>nonce-service"]
-    CRLUpdater["CRL Updater<br/>boulder-crl-updater"]
+    CRLUpdater["CRL Updater<br/>crl-updater"]
 
     %% Connections based on the ASCII diagram
     WFE --> RA
@@ -33,12 +34,12 @@ graph TD
     RA --> VA
     RA --> Publisher
 
-    CA --> Publisher
     RA --> CA
     CA --> SA
 
     Publisher --> SA
-    Publisher --> S3
+
+    CRLStorer --> S3
 
     SA --> MariaDB
 
@@ -83,7 +84,7 @@ The ACME protocol HTTP API endpoint that handles all client interactions.
 - **Common tasks**: Adding new ACME endpoints, implementing protocol extensions, enhancing error handling
 - **Key files**: `wfe2/wfe.go` (main handler logic), `wfe2/verify.go` (JWS verification)
 - **Testing patterns**: Use `test/integration/` tests for full ACME flow validation
-- **Rate limiting**: Configured via `wfe2-ratelimit-defaults.yml` and `wfe2-ratelimit-overrides.yml`
+- **Rate limiting**: Configured via `ratelimit-defaults.yml` and `ratelimit-overrides.yml` in `test/config/`
 
 ### 2. **Registration Authority (RA)** - `boulder-ra`
 
@@ -116,7 +117,7 @@ Central orchestrator for certificate issuance workflow and policy enforcement.
 - **Key files**: `ra/ra.go` (main service logic), `ra/proto/ra.proto` (gRPC interface definitions)
 - **Policy areas**: Rate limiting, CAA checking, domain validation policies, certificate profiles
 - **Testing patterns**: Mock VA/CA/SA interactions for unit tests, use `ra/ra_test.go` patterns
-- **Error handling**: Use `probs/probs.go` for ACME-compliant error responses
+- **Error handling**: Use `errors/errors.go` (imported as `berrors`) for Boulder-specific errors, `web/probs.go` for ACME problem responses
 
 ### 3. **Validation Authority (VA)** - `boulder-va`
 
@@ -139,6 +140,8 @@ Performs domain control validation using ACME challenge types.
 - **HTTP-01:** Validates control via HTTP well-known URI
 - **DNS-01:** Validates control via DNS TXT record
 - **TLS-ALPN-01:** Validates control via TLS certificate
+- **DNS-ACCOUNT-01:** Validates control via account-bound DNS TXT record
+- **DNS-PERSIST-01:** Validates control via persistent DNS TXT record
 
 **Dependencies:** Remote VAs, DNS resolvers
 
@@ -149,6 +152,7 @@ Performs domain control validation using ACME challenge types.
 - **Validation patterns**: Each challenge type has validate/cleanup phases, use existing patterns
 - **Security considerations**: DNS hijacking protection, network isolation, timeout handling
 - **Testing**: Use `va/va_test.go` patterns, mock DNS/HTTP responses with `bdns/` and `test/chall-test-srv/`
+- **Challenge types**: HTTP-01, DNS-01, TLS-ALPN-01, DNS-ACCOUNT-01, DNS-PERSIST-01
 - **Multi-perspective**: Remote VA coordination via `cmd/remoteva/`
 
 ### 4. **Certificate Authority (CA)** - `boulder-ca`
@@ -215,9 +219,9 @@ Database abstraction layer and persistent storage management.
 
 - **Common tasks**: Adding new database tables, implementing data queries, creating migrations
 - **Key files**: `sa/sa.go` (main service), `sa/model.go` (data models), `sa/proto/sa.proto` (gRPC interface)
-- **Database patterns**: Use GORM for ORM, follow existing model patterns in `sa/model.go`
-- **Migrations**: Add to `sa/db/boulder_sa/` with timestamp prefix, test with `sa/migrations.sh`
-- **Testing**: Use `test/create_db.sh` for test database setup, `satest/satest.go` for helpers
+- **Database patterns**: Uses `borp` (a `gorp` fork) via `db.WrappedMap`, follow existing model patterns in `sa/model.go`
+- **Migrations**: Schema files live in `sa/db/` (e.g., `01-boulder_sa.sql`), test with `sa/migrations.sh`
+- **Testing**: Use `sa/satest/satest.go` for test helpers
 - **Performance**: Consider read replicas, use `sa_ro` user for read-only operations
 
 ### 6. **Publisher** - `boulder-publisher`
@@ -233,13 +237,12 @@ Handles Certificate Transparency log submission and external integrations.
 - SCT (Signed Certificate Timestamp) collection
 - External compliance reporting
 - Certificate publication workflows
-- Publishing artifacts (e.g., CRLs) to external object storage (e.g., Amazon S3)
 
-**Dependencies:** CT logs, SA, External Object Storage (e.g., Amazon S3)
+**Dependencies:** CT logs, SA
 
 **AI Development Notes:**
 
-- **Common tasks**: Adding new CT log endpoints, implementing submission policies, enhancing retry logic, integrating with new external storage.
+- **Common tasks**: Adding new CT log endpoints, implementing submission policies, enhancing retry logic
 - **Key files**: `publisher/publisher.go` (main submission logic), `ctpolicy/ctpolicy.go` (CT policy enforcement)
 - **CT integration**: Follows RFC 6962, submits precertificates and collects SCTs
 - **Testing**: Use `test/ct-test-srv/` for CT log mocking, `ctpolicy/ctpolicy_test.go` patterns
@@ -296,33 +299,30 @@ Provides multi-perspective validation from different network vantage points.
 **Path:** `cmd/sfe/`  
 **Package:** `sfe/`
 
-Self-service portal for account management and certificate services.
+Self-service web portal for subscriber account operations.
 
 **Responsibilities:**
 
 - Account unpausing interface
-- Subscriber self-service operations
-- Web-based certificate management
-- User-facing documentation and help
+- Rate limit override management (per-account, per-domain, per-IP)
 
 ### 10. **Observer** - `boulder-observer`
 
 **Path:** `cmd/boulder-observer/`  
 **Package:** `observer/`
 
-Monitoring and metrics collection service.
+Generic prober framework for monitoring external dependencies.
 
 **Responsibilities:**
 
-- Certificate transparency log monitoring
-- Certificate issuance monitoring
-- Compliance and audit reporting
-- Anomaly detection
+- Configurable probers for HTTP, DNS, TLS, CRL, AIA, and CCADB endpoints
+- Health and availability monitoring of external services
+- Prometheus metrics export for probe results
 
-### 11. **CRL Updater** - `boulder-crl-updater`
+### 11. **CRL Updater** - `crl-updater`
 
-**Path:** `cmd/boulder-crl-updater/` (presumed, verify actual path)  
-**Packages:** `crl/updater/`, `crl/checker/`, `crl/storer/`
+**Path:** `cmd/crl-updater/`  
+**Packages:** `crl/updater/`, `crl/checker/`
 
 Manages the lifecycle of Certificate Revocation Lists (CRLs). This service or tool is responsible for generating new CRLs, ensuring their correctness, having them signed by the CA, and making them available for distribution.
 
@@ -330,24 +330,22 @@ Manages the lifecycle of Certificate Revocation Lists (CRLs). This service or to
 
 - **CRL Generation**: Compiles lists of revoked certificates from data in the Storage Authority (SA).
 - **CRL Signing**: Coordinates with the Certificate Authority (CA) to sign newly generated CRLs.
-- **CRL Storage**: Stores signed CRLs, typically using the Storage Authority (SA), so they can be published.
 - **CRL Checking**: Performs validation checks on CRLs, utilizing functionality from the `crl/checker/` package.
-- **Scheduling**: Often runs as a periodic job to ensure CRLs are kept up-to-date.
+- **Scheduling**: Runs as a periodic job to ensure CRLs are kept up-to-date.
 
 **Key Operations & Packages:**
 
 - Uses the `crl/updater/` package for overall orchestration.
 - Leverages `crl/checker/` for validating CRL contents and structure.
-- Interacts with `crl/storer/` (or directly with SA) for persisting and retrieving CRL data.
-- Common CRL definitions and types are in `crl/crl.go`.
+- CRL storage and S3 publication are handled by the separate **CRL Storer** service (`cmd/crl-storer/`, `crl/storer/`).
 
 **Dependencies:** CA, SA
 
 **AI Development Notes:**
 
-- **Common tasks**: Modifying CRL generation logic, updating CRL profiles or extensions, enhancing CRL validation, changing storage mechanisms.
-- **Key files**: `crl/updater/updater.go` (likely main logic), `crl/checker/checker.go`, `crl/storer/storer.go`.
-- **Interaction points**: Understand how it fetches revocation data (from SA), requests signing (from CA), and stores CRLs (to SA).
+- **Common tasks**: Modifying CRL generation logic, updating CRL profiles or extensions, enhancing CRL validation
+- **Key files**: `crl/updater/updater.go` (main logic), `crl/checker/checker.go`
+- **Interaction points**: Fetches revocation data from SA, requests signing from CA. CRL publication to S3 is handled by `crl-storer`.
 
 ## Service Communication
 
